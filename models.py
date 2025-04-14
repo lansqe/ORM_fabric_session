@@ -5,68 +5,76 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sql_enums import GenderEnum, RatingEnum, ProfessionEnum, StatusPost
-from database import Base, uniq_str_un, array_or_none_an  # Оптимизировано путем аннотации
+from database import Base, uniq_str_un, array_or_none_an, content_an  # Оптимизировано путем аннотации
 
 class User(Base):
-    username: Mapped[uniq_str_un] # Тут
-    email: Mapped[uniq_str_un] # И тут
+    username: Mapped[uniq_str_un]
+    email: Mapped[uniq_str_un]
     password: Mapped[str]
-    profile_id: Mapped[Optional[int]] = mapped_column(ForeignKey('profiles.id'))
 
+    # Связь один-к-одному с Profile
     profile: Mapped["Profile"] = relationship(
         "Profile",
-        back_populates="user", # Атрибут обратной связи(указывает на user)
-        uselist=False, # Ключевой параметр для связи один-к-одному
-                       # По умолчанию relationship предполагает связь "один-ко-многим" или "многие-к-одному".
-                       # uselist=False задает связь 1к1
-        lazy="joined" # Автоматически подгружает profile при запросе user
+        back_populates="user",
+        uselist=False,  # Обеспечивает связь один-к-одному
+        lazy="joined"  # Автоматически загружает связанные данные из Profile при запросе User
     )
 
+    # Связь один-ко-многим с Post
     posts: Mapped[list["Post"]] = relationship(
         "Post",
-        back_populates="user", # связывает с полем user в Post
-        cascade="all, delete-orphan" # Удаляет посты при удалении пользователя
+        back_populates="user",
+        cascade="all, delete-orphan"  # При удалении User удаляются и связанные Post
     )
 
-    comments: Mapped["Comment"] = relationship(
+    # Связь один-ко-многим с Comment
+    comments: Mapped[list["Comment"]] = relationship(
         "Comment",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan"  # При удалении User удаляются и связанные Comment
     )
+
 
 class Profile(Base):
     first_name: Mapped[str]
-    last_name: Mapped[Optional[str]]
-    age: Mapped[Optional[int]]
+    last_name: Mapped[str | None]
+    age: Mapped[int | None]
     gender: Mapped[GenderEnum]
-    profession: Mapped[ProfessionEnum] = mapped_column(
-        default=ProfessionEnum.DEVELOPER,
-        server_default=text("'UNEMPLOYED'")
-    )
-    interests: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String))
-    contacts: Mapped[Optional[Dict]] = mapped_column(JSON)
+    profession: Mapped[ProfessionEnum] = mapped_column(default=ProfessionEnum.DEVELOPER,
+                                                       server_default=text("'UNEMPLOYED'"))
+    interests: Mapped[array_or_none_an]
+    contacts: Mapped[dict | None] = mapped_column(JSON)
 
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'), unique=True)
+
+    # Обратная связь один-к-одному с User
     user: Mapped["User"] = relationship(
         "User",
-        back_populates="profile", # относится к профилю
-        uselist=False # 1k1
+        back_populates="profile",
+        uselist=False
     )
+
 
 class Post(Base):
     title: Mapped[str]
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[content_an]
     main_photo_url: Mapped[str]
-    photos: Mapped[Optional[List[Text]]] = mapped_column(ARRAY(String))
+    photos_url: Mapped[array_or_none_an]
     status: Mapped[StatusPost] = mapped_column(
         default=StatusPost.PUBLISHED,
-        server_default=text("'DRAFT'"))
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
-
-    user: Mapped["User"] = relationship(
-        "User",
-        back_populates="posts" # указывает на связь с полем posts в User.
+        server_default=text("'DRAFT'"),
+        nullable=False
     )
 
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+
+    # Связь многие-к-одному с User
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="posts"
+    )
+
+    # Связь один-ко-многим с Comment
     comments: Mapped[list["Comment"]] = relationship(
         "Comment",
         back_populates="post",
@@ -75,19 +83,16 @@ class Post(Base):
 
 
 class Comment(Base):
-    content: Mapped[str] = mapped_column(Text)
+    content: Mapped[content_an]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     post_id: Mapped[int] = mapped_column(ForeignKey('posts.id'))
     is_published: Mapped[bool] = mapped_column(default=True, server_default=text("'false'"))
-    rating: Mapped[RatingEnum] = mapped_column(
-        default=RatingEnum.FIVE,
-        server_default=text("'SEVEN'")
-    )
+    rating: Mapped[RatingEnum] = mapped_column(default=RatingEnum.FIVE, server_default=text("'SEVEN'"))
 
     # Связь многие-к-одному с User
     user: Mapped["User"] = relationship(
         "User",
-        back_populates="user"
+        back_populates="comments"
     )
 
     # Связь многие-к-одному с Post
