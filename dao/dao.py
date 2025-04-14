@@ -17,9 +17,3 @@ class PostDAO(BaseDAO):
 class CommentDAO(BaseDAO):
     model = Comment
 
-
-
-
-
-
-
