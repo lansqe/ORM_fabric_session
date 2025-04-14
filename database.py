@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Optional, List
+from typing import Annotated, List
 
 from sqlalchemy import Integer, func, ARRAY, String
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
@@ -26,7 +26,7 @@ def connection(method):
             finally:
                 await session.close()
 
-    return wrapper()
+    return wrapper
 
 
 # Базовый класс для всех моделей
@@ -42,6 +42,8 @@ class Base(AsyncAttrs, DeclarativeBase):
         return cls.__name__.lower() + 's'
 
 
-uniq_str_un = Annotated[str, mapped_column(unique=True)]
+uniq_str_un = Annotated[str, mapped_column(String, unique=True)]
 
-array_or_none_an = Annotated[Optional[List[str]], mapped_column(ARRAY(String))]
+array_or_none_an = Annotated[List[str | None], mapped_column(ARRAY(String))]
+
+content_an = Annotated[str | None, mapped_column(String)]
