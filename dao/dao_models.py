@@ -1,9 +1,10 @@
-from dao.base import BaseDAO
+from .base import BaseDAO
 from models import User, Profile, Post, Comment
 
 
 class UserDAO(BaseDAO):
     model = User
+
 
 
 class ProfileDAO(BaseDAO):
