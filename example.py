@@ -9,4 +9,4 @@ async def add_user(name: str, age: int, session):
     await session.commit()
 
 
-await add_user("Алексей Яковенко", 31)
+# await add_user("Алексей Яковенко", 31)
