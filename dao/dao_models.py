@@ -61,6 +61,16 @@ class UserDAO(BaseDAO):
         # Возвращаем список всех пользователей
         return records
 
+    @classmethod
+    async def get_username_id(cls, session: AsyncSession):
+        # Создаем запрос для выборки id и username всех пользователей
+        query = select(cls.model.id, cls.model.username)  # Указываем конкретные колонки
+        print(query)  # Выводим запрос для отладки
+        result = await session.execute(query)  # Выполняем асинхронный запрос
+        records = result.all()  # Получаем все результаты
+        return records  # Возвращаем список записей
+
+
 class ProfileDAO(BaseDAO):
     model = Profile
 
