@@ -14,7 +14,7 @@ engine = create_async_engine(url=DATABASE_URL)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
-#     Декоратор
+#     Декоратор подключения
 def connection(method):
     async def wrapper(*args, **kwargs):
         async with async_session_maker() as session:
